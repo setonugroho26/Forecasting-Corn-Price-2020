@@ -1,0 +1,82 @@
+#input data
+
+jagung = read.csv(file.choose(), header = TRUE, sep = ",")
+View(jagung)
+
+#mengubah menjadi objek time series
+jagung.ts = ts(jagung$harga, start=c(2014,1), frequency = 12)
+jagung.ts
+
+bensin=penumpang.ts
+#membuat plot untuk mengetahui pola data
+plot.ts(jagung.ts)
+
+
+#Peramalan Holt Winters Additive
+hwb.pb.add = HoltWinters(jagung.ts, alpha = NULL, beta = NULL, 
+                         gamma = NULL, seasonal = "additive")
+hwb.pb.add
+
+#Peramalan Holt Winters Multiplicative
+hwb.pb.multi = HoltWinters(jagung.ts, alpha = NULL, beta = NULL, 
+                           gamma = NULL,  seasonal = "multiplicative")
+hwb.pb.multi
+
+#Menghitung MSE, RMSE, MAPE Additive
+mse.add = hwb.pb.add$SSE/NROW(hwb.pb.add$fitted)
+rmse.add = sqrt(mse.add)
+mape.add = mean(abs(jagung.ts-hwb.pb.add$fitted[,1])/jagung.ts)*100
+mse.add
+rmse.add
+mape.add
+#Menghitung MSE, RMSE, MAPE Multiplicative
+mse.multi = hwb.pb.multi$SSE/NROW(hwb.pb.multi$fitted)
+rmse.multi = sqrt(mse.multi)
+mape.multi = mean(abs(jagung.ts-hwb.pb.multi$fitted[,1])/jagung.ts)*100
+mse.multi
+rmse.multi
+mape.multi             
+#nilai keakuratan tinggi karena kurang dari 10
+
+#melakukan peramalan
+pred.pb = predict(hwb.pb.multi, 10)
+pred.pb
+pred.pb = predict(hwb.pb.add, 10)
+pred.pb
+
+##==== PARAMETER DAMPED ===##
+library(forecast)
+#additive
+hw.pb.add = hw(jagung.ts, h = 10, seasonal = "additive", damped = TRUE, 
+               alpha = NULL, beta = NULL, phi = NULL)
+hw.pb.add
+
+#multiplicative
+hw.pb.multi = hw(jagung.ts, h = 10, seasonal = "multiplicative", damped = TRUE, 
+                 alpha = NULL, beta = NULL, phi = NULL)
+hw.pb.multi
+
+#menampilkan model tes
+hw.pb.add$model 
+hw.pb.multi$model
+
+#ukuran kesalahan additive
+mse.add = mean(hw.pb.add$residuals^2)
+rmse.add = sqrt(mse.add)
+mape.add = mean(abs(hw.pb.add$residuals)/jagung.ts, na.rm = TRUE)*100
+mse.add 
+rmse.add 
+mape.add
+#ukuran kesalahan multiplicative
+mse.multi = mean((jagung.ts-hw.pb.multi$fitted)^2)
+rmse.multi = sqrt(mse.multi)
+mape.multi = mean(abs(jagung.ts-hw.pb.multi$fitted)/jagung.ts, na.rm = TRUE)*100
+mse.multi 
+rmse.multi 
+mape.multi
+
+#plot peramalan terbaik
+autoplot(jagung.ts, main="Peramalan Harga Jagung Jawa Barat")+
+  autolayer(hw.pb.multi, series="Frc HW Multi", PI=FALSE)
+
+
